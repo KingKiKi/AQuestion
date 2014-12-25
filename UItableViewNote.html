@@ -1,0 +1,158 @@
+<html lang="en"><head>
+    <meta charset="UTF-8">
+    <title></title>
+<style id="system" type="text/css">body{}</style><style id="custom" type="text/css"></style></head>
+<body marginheight="0"><h2>UITableView 笔记</h2>
+<p>  我们常用的表格类视图就是用<strong>UITableView</strong>与<strong>UITableViewCell</strong>，<strong>UITableViewController</strong>继承<strong>UIViewContoller</strong>，所以只要很少代码就可以显示一个视图，<strong>UITableViewController</strong>也是<strong>UIScrollView</strong>子类，所以也有上下滑动效果 ；<strong>UITableView</strong>和<strong>UITableViewCell</strong>不能储存数据，可以用来显示特定行数内的数据，而且，也并不是把所有数据都放在单元格cell视图上，而是通过单元格重用和实现<strong>UITableViewDataSource</strong>,<strong>UITableViewDelegate</strong>协议的方法形式显示出来；
+
+</p>
+<p>1.新建工程名为SampleTable ， File-&gt;New-&gt;Project -&gt;single View Application -&gt; next 
+2.添加UITableViewDataSource,UITableViewDelegate协议
+</p>
+<pre><code class="lang-c">#import &lt;UIKit/UIKit.h&gt;
+@interface STViewController : UIViewController&lt;UITableViewDataSource,UITableViewDelegate&gt;
+@property(strong,nonatomic) NSArray *listData;
+@property(strong,nonatomic)UITableView *tableView;
+@property(strong,nonatomic)UITableViewCell *tableViewCell;
+@end</code></pre>
+<p>3.在@implementation STViewController后面添加上
+</p>
+<pre><code class="lang-c">@synthesize listData=_listData;
+@synthesize tableView = _tableView;
+@synthesize tableViewCell =_tableViewCell</code></pre>
+<p>viewDidLoad中实现对界面初始化工作，UITableView有两种风格，UITableViewStylePlain    默认风格，最常见的UITableViewStyleGrouped  圆角矩形风格
+</p>
+<pre><code class="lang-c">- (void)viewDidLoad
+{
+    [super viewDidLoad];
+    // Do any additional setup after loading the view, typically from a nib.
+    //初始化表格
+    self.tableView = [[UITableView alloc]initWithFrame:self.view.frame style:UITableViewStylePlain];
+// 设置协议，意思就是UITableView类的方法交给了tabView这个对象，让完去完成表格的一些设置操作   
+    self.tableView.delegate=self;
+    self.tableView.dataSource=self;
+    //把tabView添加到视图之上
+    [self.view addSubview:self.tableView];   
+//    存放显示在单元格上的数据
+    NSArray *array = [NSArray arrayWithObjects:@"张三",@"张四",@"张五",@"李三",@"李四",@"李五",@"李六",@"王三",@"王四",@"王五",@"王六",@"王七",@"王八",@"王九",@"王十", nil];
+    self.listData = array;
+
+}</code></pre>
+<p>4.视图上显示单元格的内容以及一些数据都是都是属性都是依赖于协议的代理方法
+</p>
+<pre><code class="lang-c">//返回多少个section
+-(NSInteger) numberOfSectionsInTableView:(UITableView *)tableView
+{
+    return 1;
+}</code></pre>
+<pre><code class="lang-c">//返回行数，也就是返回数组中所存储数据，也就是section的元素
+-(NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
+{
+    return [self.listData count];
+}</code></pre>
+<p><strong>UITableView</strong>每一行都有一个<strong>UITableViewCell</strong>的实例表示，它也继承<strong>UIView</strong>，也就是每一行又拥有一个子视图，如果是大型表格，这样开销就非常大，所以就有了单元格的重用；当一部分单元格滚出屏幕后，他们被放在一个可重用的单元序列之中。如果系统运行比较慢，表视图就会从序列中删除这些单元，释放空间，如果有储存空间，表视图就会重新获取这些单元，以后面使用；
+</p>
+<pre><code class="lang-c">-(UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+//    声明静态字符串型对象，用来标记重用单元格
+    static NSString *TableSampleIdentifier = @"TableSampleIdentifier";
+//    用TableSampleIdentifier表示需要重用的单元
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:TableSampleIdentifier];
+//    如果如果没有多余单元，则需要创建新的单元
+    if (cell == nil) {
+        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:TableSampleIdentifier];
+    }
+
+    else {
+        while ([cell.contentView.subviews lastObject ]!=nil) {
+            [(UIView*)[cell.contentView.subviews lastObject]removeFromSuperview];
+        }
+    }
+//    获取当前行信息值
+    NSUInteger row = [indexPath row];
+//    填充行的详细内容
+    cell.detailTextLabel.text = @"详细内容";
+//    把数组中的值赋给单元格显示出来
+    cell.textLabel.text=[self.listData objectAtIndex:row];
+
+
+//    cell.textLabel.backgroundColor= [UIColor greenColor];
+
+//    表视图单元提供的UILabel属性，设置字体大小
+    cell.textLabel.font = [UIFont boldSystemFontOfSize:40.0f];
+//    tableView.editing=YES;
+/*
+    cell.textLabel.backgroundColor = [UIColor clearColor];
+        UIView *backgroundView = [[UIView alloc] initWithFrame:cell.frame];
+    backgroundView.backgroundColor = [UIColor greenColor];
+    cell.backgroundView=backgroundView;
+   */ 
+//    设置单元格UILabel属性背景颜色
+    cell.textLabel.backgroundColor=[UIColor clearColor];
+//    正常情况下现实的图片
+    UIImage *image = [UIImage imageNamed:@"2.png"];
+    cell.imageView.image=image;
+
+//    被选中后高亮显示的照片
+    UIImage *highLightImage = [UIImage imageNamed:@"1.png"];
+    cell.imageView.highlightedImage = highLightImage;
+    return cell;
+}</code></pre>
+<p>注释内容中有这两个设置表视图背景颜色的属性方法，具体了解可以看这个博客<a href="http://haoxiang.org/2010/12/uitableviewcell-background/">http://haoxiang.org/2010/12/uitableviewcell-background/</a>  讲的比较详细
+</p>
+<pre><code class="lang-c">cell.textLabel.backgroundColor= [UIColor greenColor];</code></pre>
+<pre><code class="lang-c">cell.textLabel.backgroundColor = [UIColor clearColor];
+UIView *backgroundView = [[UIView alloc] initWithFrame:cell.frame];
+backgroundView.backgroundColor = [UIColor greenColor];
+cell.backgroundView=backgroundView;</code></pre>
+<h3>表示UITableViewCell风格的常量有:</h3>
+<ul>
+<li>UITableViewCellStyleDefault</li>
+<li>UITableViewCellStyleSubtile</li>
+<li>UITableViewCellStyleValue1</li>
+<li>UITableViewCellStyleValue2</li>
+</ul>
+<h3>部分代理方法：</h3>
+<pre><code class="lang-c">//设置单元格高度
+-(CGFloat) tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    return 90;
+
+}</code></pre>
+<pre><code class="lang-c">//设置单元格缩进
+-(NSInteger) tableView:(UITableView *)tableView indentationLevelForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    NSInteger row = [indexPath row];
+    if (row % 2==0) {
+        return 0;
+    }
+    return 2;
+}</code></pre>
+<pre><code class="lang-c">//选中单元格所产生事件
+-(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+//    首先是用indexPath获取当前行的内容
+    NSInteger row = [indexPath row];
+//    从数组中取出当前行内容
+    NSString *rowValue = [self.listData objectAtIndex:row];
+    NSString *message = [[NSString alloc]initWithFormat:@"You selected%@",rowValue];
+//    弹出警告信息
+    UIAlertView *alert = [[UIAlertView alloc]initWithTitle:@"提示"
+                                                   message:message
+                                                  delegate:self
+                                         cancelButtonTitle:@"OK"
+                                         otherButtonTitles: nil];
+    [alert show];
+}</code></pre>
+<p>- (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section;
+
+</p>
+<pre><code>              这个方法返回指定的 section的header view 的高度。</code></pre>
+<p>- (CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section;
+
+</p>
+<pre><code>              这个方法返回指定的 section的footer view 的高度。</code></pre>
+<h4>代码实现 UITableView与UITableViewCell,并附上链接：<a href="http://download.csdn.net/detail/duxinfeng2010/4416166">源码</a></h4>
+<h4>Thangks for your read!</h4>
+<p>Edit By <a href="http://mahua.jser.me">MaHua</a></p>
+</body></html>
